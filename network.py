@@ -14,7 +14,7 @@ import random
 
 # Third-party libraries
 import numpy as np
-#np.seterr(divide='ignore', invalid='ignore')
+np.seterr(divide='ignore', invalid='ignore')
 
 class Network(object):
 
@@ -74,10 +74,8 @@ class Network(object):
             delta_nabla_b, delta_nabla_w = self.backprop(x, y)
             nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
-        self.weights = [w-(eta/len(mini_batch))*nw
-                        for w, nw in zip(self.weights, nabla_w)]
-        self.biases = [b-(eta/len(mini_batch))*nb
-                       for b, nb in zip(self.biases, nabla_b)]
+        self.weights = [w-(eta/len(mini_batch))*nw for w, nw in zip(self.weights, nabla_w)]
+        self.biases = [b-(eta/len(mini_batch))*nb for b, nb in zip(self.biases, nabla_b)]
 
     def backprop(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
@@ -91,7 +89,7 @@ class Network(object):
         activations = [x] # list to store all the activations, layer by layer
         zs = [] # list to store all the z vectors, layer by layer
         for b, w in zip(self.biases[:-1], self.weights[:-1]):
-            z = np.dot(w, activation)+b
+            z = np.dot(w, activation) + b
             zs.append(z)
             #activation = sigmoid(z)
             activation = tanh(z)
@@ -102,7 +100,7 @@ class Network(object):
         activations.append(activation)
         # backward pass
         #delta = self.cost_derivative(activations[-1], y) * sigmoid_prime(zs[-1])
-        delta = self.cost_derivative(activations[-1], y) * softmax_prime(zs[-1])
+        delta = activations[-1] - y
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         # Note that the variable l in the loop below is used a little
@@ -130,8 +128,7 @@ class Network(object):
 
     def cost_derivative(self, output_activations, y):
         """Return the vector of partial derivatives  (partial C_x \partial a )for the output activations."""
-        #return (output_activations-y)
-        return - (1.0 / output_activations)
+        return (output_activations - y)
 
 #### Miscellaneous functions
 def sigmoid(z):
@@ -144,24 +141,20 @@ def sigmoid_prime(z):
 
 def softmax(z):
     """The softmax funtcion."""
-    z = normalization(z)
     return np.exp(z) / sum(np.exp(z))
 
 def softmax_prime(z):
     """Derivative of softmax function."""
-    z = normalization(z)
     return softmax(z) * (1.0 - softmax(z))
 
 
 def tanh(z):
     """The tanh function."""
-    z = normalization(z)
-    return 1.0 - (2.0 / (np.exp(2 * z) + 1))
+    return 1.0 - (2.0 / (np.exp(2.0 * z) + 1.0))
 
 def tanh_prime(z):
     """Derivative of the tanh function."""
-    z = normalization(z)
-    return 1.0 - tanh(z) * tanh(z)
+    return 1.0 - (tanh(z)*tanh(z))
 
 def normalization(z):
     mu = np.mean(z)
