@@ -18,9 +18,48 @@ import numpy as np
 
 np.seterr(divide='ignore', invalid='ignore')
 
+class Quadratic(object):
+
+    @staticmethod
+    def cost_result(z, a, y):
+        """return the output_result of this cost function"""
+        return 0.5 * (a - y)**2
+
+    @staticmethod
+    def output_delta(z, a, y):
+        """return the derivative of this cost function"""
+        return (a - y) * sigmoid_derivative(z)
+
+
+class LogLikehood(object):
+
+    @staticmethod
+    def cost_result(z, a, y):
+        """return the output_result of this cost function"""
+        return (- y * np.log(a))
+
+    @staticmethod
+    def output_delta(z, a, y):
+        """return the derivative of this cost function"""
+        return (a - y)
+
+
+class CrossEntropy(object):
+
+    @staticmethod
+    def cost_result(z, a, y):
+        """return the output_result of this cost function"""
+        return (-y * np.log(a) - (1 - y) * np.log(1-a))
+
+    @staticmethod
+    def output_delta(z, a, y):
+        """return the derivative of this cost function"""
+        pass
+
+
 class Network(object):
 
-    def __init__(self, sizes):
+    def __init__(self, sizes, cost= Quadratic):
         """The list ``sizes`` contains the number of neurons in the respective layers of the network. 
             For example, if the list was [2, 3, 1] then it would be a three-layer network, 
         with the first layer containing 2 neurons, the second layer 3 neurons,and the third layer 1 neuron.  
@@ -32,6 +71,7 @@ class Network(object):
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
         self.weights = [np.random.randn(y, x) / np.sqrt(x) 
                         for x, y in zip(sizes[:-1], sizes[1:])]
+        self.cost = cost
 
     def feedforward(self, a):
         """Return the output of the network if ``a`` is input."""
@@ -112,7 +152,7 @@ class Network(object):
         activations.append(activation)
         # backward pass
         #delta = self.cost_derivative(activations[-1], y) * sigmoid_derivative(zs[-1])
-        delta = activations[-1] - y
+        delta = (self.cost).output_delta(zs[-1], activations[-1], y)#activations[-1] - y
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         # Note that the variable l in the loop below is used a little
@@ -151,9 +191,9 @@ class Network(object):
             
 
 
-    def cost_derivative(self, output_activations, y):
-        """Return the vector of partial derivatives  (partial C_x \partial a )for the output activations."""
-        return (output_activations - y)
+    # def cost_derivative(self, output_activations, y):
+    #     """Return the vector of partial derivatives  (partial C_x \partial a )for the output activations."""
+    #     return (output_activations - y)
     
 
 #### Miscellaneous functions
