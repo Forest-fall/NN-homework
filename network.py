@@ -57,8 +57,8 @@ class Network(object):
         if test_data: 
             n_test = len(test_data)
         n_train = len(training_data)
-        test_accuracy = []
-        test_cost = []
+        test_error = []
+        # test_cost = []
         for j in range(epochs):
             #打乱顺序
             random.shuffle(training_data)
@@ -69,13 +69,10 @@ class Network(object):
                 print("Epoch {0}: {1} / {2}".format(j, self.evaluate(test_data), n_test))
             else:
                 print("Epoch {0} complete".format(j))
-            test_cost.append(self.cost(test_data).tolist())
-            test_accuracy.append(self.evaluate(test_data) / n_test)
-        a = test_accuracy
-        b = test_cost
-
-        with open("C:/Users/Administrator/Documents/GitHub/NN-homework/datas","w") as f:
-            json.dump([test_accuracy, test_cost], f)
+            # test_cost.append(self.cost(test_data).tolist())
+            test_error.append(self.evaluate(test_data) / n_test)
+        with open("C:/Users/Forest-fall/Documents/GitHub/NN-homework/test_accuracy","w") as f:
+            json.dump(test_error, f)
      
     def update_mini_batch(self, mini_batch, eta):
         """Update the network's weights and biases by applying
@@ -139,18 +136,18 @@ class Network(object):
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
         neuron in the final layer has the highest activation."""
-        test_results =[]
-        for x, y in test_data:
-            y_predict = np.argmax(self.feedforward(x))
-            test_results.append((y_predict, y))
-        # test_results = [(np.argmax(self.feedforward(x)), y) for (x, y) in test_data]
+        # test_results =[]
+        # for x, y in test_data:
+        #     y_predict = np.argmax(self.feedforward(x))
+        #     test_results.append((y_predict, y))
+        test_results = [(np.argmax(self.feedforward(x)), y) for (x, y) in test_data]
         return sum(int(x == y) for (x, y) in test_results)
     
-    def cost(self, data):
-        cost = 0
-        for x, y in data:
-            cost += -y * np.log(self.feedforward(x)) / len(data)
-        return cost
+    # def cost(self, data):
+    #     cost = 0
+    #     for x, y in data:
+    #         cost += -y * np.log(self.feedforward(x)) / len(data)
+    #     return cost
             
 
 
