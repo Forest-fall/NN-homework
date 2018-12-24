@@ -11,9 +11,11 @@ and omits many desirable features.
 #### Libraries
 # Standard library
 import random
+import json
 
 # Third-party libraries
 import numpy as np
+
 np.seterr(divide='ignore', invalid='ignore')
 
 class Network(object):
@@ -28,18 +30,21 @@ class Network(object):
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
-        self.weights = [np.random.randn(y, x)  #WT
+        self.weights = [np.random.randn(y, x) / np.sqrt(x) 
                         for x, y in zip(sizes[:-1], sizes[1:])]
 
     def feedforward(self, a):
         """Return the output of the network if ``a`` is input."""
         for b, w in zip(self.biases[:-1], self.weights[:-1]):
             #a = sigmoid(np.dot(w, a)+b)
+            z = np.dot(w, a) + b
+            # print("mean:", np.mean(z))
+            # print("std:", np.std(z))
             a = tanh(np.dot(w, a) + b)
         a = softmax(np.dot(self.weights[-1], a) + self.biases[-1])
         return a
 
-    def SGD(self, training_data, epochs, mini_batch_size, eta, test_data=None):
+    def SGD(self, training_data, epochs, mini_batch_size, eta, test_data = None):
         """Train the neural network using mini-batch stochastic gradient descent.  The ``training_data`` is a list of tuples
         ``(x, y)`` representing the training inputs and the desired
         outputs.  The other non-optional parameters are
@@ -51,20 +56,30 @@ class Network(object):
         training_data = list(training_data)
         if test_data: 
             n_test = len(test_data)
-        n = len(training_data)
+        n_train = len(training_data)
+        test_accuracy = []
+        test_cost = []
         for j in range(epochs):
             #打乱顺序
             random.shuffle(training_data)
-            mini_batches = [training_data[k: k + mini_batch_size] for k in range(0, n, mini_batch_size)]
+            mini_batches = [training_data[k: k + mini_batch_size] for k in range(0, n_train, mini_batch_size)]
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
             if test_data:
                 print("Epoch {0}: {1} / {2}".format(j, self.evaluate(test_data), n_test))
             else:
                 print("Epoch {0} complete".format(j))
+            test_cost.append(self.cost(test_data).tolist())
+            test_accuracy.append(self.evaluate(test_data) / n_test)
+        a = test_accuracy
+        b = test_cost
 
+        with open("C:/Users/Administrator/Documents/GitHub/NN-homework/datas","w") as f:
+            json.dump([test_accuracy, test_cost], f)
+     
     def update_mini_batch(self, mini_batch, eta):
         """Update the network's weights and biases by applying
+        
         gradient descent using backpropagation to a single mini batch.
         The ``mini_batch`` is a list of tuples ``(x, y)``, and ``eta``
         is the learning rate."""
@@ -74,8 +89,8 @@ class Network(object):
             delta_nabla_b, delta_nabla_w = self.backprop(x, y)
             nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
-        self.weights = [w-(eta/len(mini_batch))*nw for w, nw in zip(self.weights, nabla_w)]
-        self.biases = [b-(eta/len(mini_batch))*nb for b, nb in zip(self.biases, nabla_b)]
+        self.weights = [w - (eta  /len(mini_batch)) * nw for w, nw in zip(self.weights, nabla_w)]
+        self.biases = [b - (eta / len(mini_batch)) * nb for b, nb in zip(self.biases, nabla_b)]
 
     def backprop(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
@@ -99,7 +114,7 @@ class Network(object):
         activation = softmax(z)
         activations.append(activation)
         # backward pass
-        #delta = self.cost_derivative(activations[-1], y) * sigmoid_prime(zs[-1])
+        #delta = self.cost_derivative(activations[-1], y) * sigmoid_derivative(zs[-1])
         delta = activations[-1] - y
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
@@ -111,11 +126,12 @@ class Network(object):
         # that Python can use negative indices in lists.
         for l in range(2, self.num_layers):
             z = zs[-l]
-            #sp = sigmoid_prime(z)
-            sp = tanh_prime(z)
-            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
+            #activation_derivative = sigmoid_derivative(z)
+            activation_derivative = tanh_derivative(z)
+            #Hadamard乘积
+            delta = np.dot(self.weights[-l + 1].transpose(), delta) * activation_derivative 
             nabla_b[-l] = delta
-            nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
+            nabla_w[-l] = np.dot(delta, activations[-l - 1].transpose())
         return (nabla_b, nabla_w)
 
     def evaluate(self, test_data):
@@ -123,19 +139,32 @@ class Network(object):
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
         neuron in the final layer has the highest activation."""
-        test_results = [(np.argmax(self.feedforward(x)), y) for (x, y) in test_data]
+        test_results =[]
+        for x, y in test_data:
+            y_predict = np.argmax(self.feedforward(x))
+            test_results.append((y_predict, y))
+        # test_results = [(np.argmax(self.feedforward(x)), y) for (x, y) in test_data]
         return sum(int(x == y) for (x, y) in test_results)
+    
+    def cost(self, data):
+        cost = 0
+        for x, y in data:
+            cost += -y * np.log(self.feedforward(x)) / len(data)
+        return cost
+            
+
 
     def cost_derivative(self, output_activations, y):
         """Return the vector of partial derivatives  (partial C_x \partial a )for the output activations."""
         return (output_activations - y)
+    
 
 #### Miscellaneous functions
 def sigmoid(z):
     """The sigmoid function."""
     return 1.0 / (1.0 + np.exp(-z))
 
-def sigmoid_prime(z):
+def sigmoid_derivative(z):
     """Derivative of the sigmoid function."""
     return sigmoid(z) * (1.0 - sigmoid(z))
 
@@ -143,7 +172,7 @@ def softmax(z):
     """The softmax funtcion."""
     return np.exp(z) / sum(np.exp(z))
 
-def softmax_prime(z):
+def softmax_derivative(z):
     """Derivative of softmax function."""
     return softmax(z) * (1.0 - softmax(z))
 
@@ -152,11 +181,11 @@ def tanh(z):
     """The tanh function."""
     return 1.0 - (2.0 / (np.exp(2.0 * z) + 1.0))
 
-def tanh_prime(z):
+def tanh_derivative(z):
     """Derivative of the tanh function."""
     return 1.0 - (tanh(z)*tanh(z))
 
-def normalization(z):
-    mu = np.mean(z)
-    sigma = np.std(z)
-    return (z - mu) / sigma
+def vectorized_result(j):
+    v = np.zeros((10, 1))
+    v[j] = 1.0
+    return v
