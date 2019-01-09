@@ -69,19 +69,31 @@ class Network(object):
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
-        self.weights = [np.random.randn(y, x) / np.sqrt(x) 
-                        for x, y in zip(sizes[:-1], sizes[1:])]
+
+        # """init"""
+        # self.weights = [np.random.randn(y, x) for x, y in zip(sizes[:-1], sizes[1:])]
+
+        """normalization"""
+        self.weights = [np.random.randn(y, x) / np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+
         self.cost = cost
 
     def feedforward(self, a):
         """Return the output of the network if ``a`` is input."""
-        for b, w in zip(self.biases[:-1], self.weights[:-1]):
-            #a = sigmoid(np.dot(w, a)+b)
+
+        # for b, w in zip(self.biases[:-1], self.weights[:-1]):
+        #     """log+tanh+softmax"""
+        #     z = np.dot(w, a) + b
+        #     # print("mean:", np.mean(z))
+        #     # print("std:", np.std(z))
+        #     #a = sigmoid(np.dot(w, a)+b)
+        #     a = tanh(np.dot(w, a) + b)
+        # a = softmax(np.dot(self.weights[-1], a) + self.biases[-1])
+
+        for b, w in zip(self.biases, self.weights):
+            """Quadratic+sigmoid"""
             z = np.dot(w, a) + b
-            # print("mean:", np.mean(z))
-            # print("std:", np.std(z))
-            a = tanh(np.dot(w, a) + b)
-        a = softmax(np.dot(self.weights[-1], a) + self.biases[-1])
+            a = sigmoid(np.dot(w, a)+b)
         return a
 
     def SGD(self, training_data, epochs, mini_batch_size, eta, test_data = None):
@@ -111,12 +123,11 @@ class Network(object):
                 print("Epoch {0} complete".format(j))
             # test_cost.append(self.cost(test_data).tolist())
             test_error.append(self.evaluate(test_data) / n_test)
-        with open("C:/Users/Forest-fall/Documents/GitHub/NN-homework/test_accuracy","w") as f:
+        with open("C:/Users/Administrator/Documents/GitHub/NN-homework/3_Q_sigmoid_init","w") as f:
             json.dump(test_error, f)
      
     def update_mini_batch(self, mini_batch, eta):
         """Update the network's weights and biases by applying
-        
         gradient descent using backpropagation to a single mini batch.
         The ``mini_batch`` is a list of tuples ``(x, y)``, and ``eta``
         is the learning rate."""
@@ -140,35 +151,50 @@ class Network(object):
         activation = x
         activations = [x] # list to store all the activations, layer by layer
         zs = [] # list to store all the z vectors, layer by layer
-        for b, w in zip(self.biases[:-1], self.weights[:-1]):
+
+        for b, w in zip(self.biases, self.weights):
+            """Quadratic+sigmoid"""
             z = np.dot(w, activation) + b
             zs.append(z)
-            #activation = sigmoid(z)
-            activation = tanh(z)
+            activation = sigmoid(z)
             activations.append(activation)
-        z = np.dot(self.weights[-1], activation) + self.biases[-1]
-        zs.append(z)
-        activation = softmax(z)
-        activations.append(activation)
+
+        # for b, w in zip(self.biases[:-1], self.weights[:-1]):
+        #     """log+tanh+softmax"""
+        #     z = np.dot(w, activation) + b
+        #     zs.append(z)
+        #     #activation = sigmoid(z)
+        #     activation = tanh(z)
+        #     activations.append(activation)
+        # z = np.dot(self.weights[-1], activation) + self.biases[-1]
+        # zs.append(z)
+        # activation = softmax(z)
+        # activations.append(activation)
+
         # backward pass
         #delta = self.cost_derivative(activations[-1], y) * sigmoid_derivative(zs[-1])
         delta = (self.cost).output_delta(zs[-1], activations[-1], y)#activations[-1] - y
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
-        # Note that the variable l in the loop below is used a little
-        # differently to the notation in Chapter 2 of the book.  Here,
-        # l = 1 means the last layer of neurons, l = 2 is the
-        # second-last layer, and so on.  It's a renumbering of the
-        # scheme in the book, used here to take advantage of the fact
-        # that Python can use negative indices in lists.
+        #back propagation
+        # for l in range(2, self.num_layers):
+        #     """log + softmax + tanh"""
+        #     z = zs[-l]
+        #     #activation_derivative = sigmoid_derivative(z)
+        #     activation_derivative = tanh_derivative(z)
+        #     #Hadamard乘积
+        #     delta = np.dot(self.weights[-l + 1].transpose(), delta) * activation_derivative 
+        #     nabla_b[-l] = delta
+        #     nabla_w[-l] = np.dot(delta, activations[-l - 1].transpose())
+        
         for l in range(2, self.num_layers):
+            """Quadratic+sigmoid"""
             z = zs[-l]
-            #activation_derivative = sigmoid_derivative(z)
-            activation_derivative = tanh_derivative(z)
-            #Hadamard乘积
-            delta = np.dot(self.weights[-l + 1].transpose(), delta) * activation_derivative 
+            activation_derivative = sigmoid_derivative(z)
+            delta = np.dot(self.weights[-l + 1].transpose(), delta) * activation_derivative #Hadamard乘积
             nabla_b[-l] = delta
             nabla_w[-l] = np.dot(delta, activations[-l - 1].transpose())
+
         return (nabla_b, nabla_w)
 
     def evaluate(self, test_data):
