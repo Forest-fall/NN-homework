@@ -11,6 +11,7 @@ import json
 training_data, validation_data, test_data = mnist_loader.load_data_for_cnn()
 training_data = training_data[0:1]
 test_data = test_data[0:10]
+learning_rate = 0.001
 
 c1 = ConvNN.ConvLayer(28, 28, 1, 5, 5, 6, 2, 1, 0.001)
 p2 = ConvNN.MaxPoolingLayer(28, 28, 6, 2, 2, 2)

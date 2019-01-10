@@ -2,6 +2,7 @@ import DeepNet
 import mnist_loader
 import numpy as np
 import json
+import random
 
 training_data, validation_data, test_data = mnist_loader.load_data_for_dnn()
 net = DeepNet.FCLayer([784, 100, 100, 100, 10])
@@ -9,9 +10,6 @@ net = DeepNet.FCLayer([784, 100, 100, 100, 10])
 n_test = len(test_data)
 n_train = len(training_data)
 mini_batch_size = 10
-
-
-
 
 #用于存放数据绘图
 Loss = []
