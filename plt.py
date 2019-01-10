@@ -2,7 +2,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-with open("./cnn_loss", "r") as f:
+with open("./dnn_loss", "r") as f:
     loss = json.load(f)
 # with open("./dnn_accuracy", "r") as f:
 #     test_accuracy = json.load(f)
@@ -12,8 +12,8 @@ ax1 = fig.add_subplot(111)
 ax1.plot(np.arange(len(loss)), loss, color='#6593d3')
 ax1.grid(True)
 ax1.set_xlabel('Epoch')
-ax1.set_title('cnn loss')
-plt.savefig('./cnn_loss.jpg')
+ax1.set_title('dnn loss')
+plt.savefig('./dnn_loss.jpg')
 
 # ax2 = fig.add_subplot(212)
 # ax2.plot(np.arange(3), test_accuracy, color='#6593d3')
