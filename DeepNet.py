@@ -43,11 +43,12 @@ class CrossEntropy(object):
 
 class FCLayer(object):
 
-    def __init__(self, sizes, cost= LogLikehood):
+    def __init__(self, sizes, cost= Quadratic):
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
-        self.weights = [np.random.randn(y, x) / np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+        # self.weights = [np.random.randn(y, x) / np.sqrt(x) for x, y in zip(sizes[:-1], sizes[1:])]
+        self.weights = [np.random.randn(y, x) for x, y in zip(sizes[:-1], sizes[1:])]
         self.cost = cost
         self.eta = 0.1
         self.delta = [np.zeros((y, 1)) for y in sizes]
@@ -68,11 +69,13 @@ class FCLayer(object):
         self.zs = [] 
         for w, b in zip(self.weights[:-1], self.biases[:-1]):
             z = np.dot(w, a) + b
-            a = tanh(z)
+            # a = tanh(z)
+            a = sigmoid(z)
             self.zs.append(z)
             self.activations.append(a)
         z = np.dot(self.weights[-1], a) + self.biases[-1]
-        a = softmax(z)
+        # a = softmax(z)
+        a = sigmoid(z)
         self.zs.append(z)
         self.activations.append(a)
         a = self.activations
@@ -91,7 +94,8 @@ class FCLayer(object):
 
         for l in range(2, self.num_layers):
             z = self.zs[-l]
-            activation_derivative = tanh_derivative(z)
+            # activation_derivative = tanh_derivative(z)
+            activation_derivative = sigmoid_derivative(z)
             delta = np.dot(self.weights[-l + 1].transpose(), delta) * activation_derivative #Hadamard乘积
             self.delta[-l] = delta
             nabla_w[-l] = np.dot(delta, self.activations[-l - 1].transpose()) 
@@ -118,23 +122,6 @@ class FCLayer(object):
         activation_correlative = self.activations[-1][category_right]
         log_loss = (self.cost).cost_result(activation_correlative, 1)
         return log_loss
-
-        #log_loss = []
-        # for (x, y) in data:
-        #     if isTest:
-        #         category_right = np.argmax(vectorized_result(y)) #在测试集上
-        #     else:
-        #         category_right = np.argmax(y) #在训练集上
-        #     '''category_right是类别标签值,如0~9'''
-        #     activation_correlative = self.activations[-1][category_right]
-        #     '''正确的类的激活值可能不是最大的(分类错误时),但是会随着迭代的次数成为最大值(正确分类的个数提高)'''
-        #     loss = (self.cost).cost_result(activation_correlative, 1).tolist()[0]
-        #     print(loss)
-        #     log_loss.append(loss)
-        # '''每一批内参数不变,损失值取这一批数据的平均值'''
-        # average_loss = sum(log_loss) / len(data)
-        # return average_loss
-
 
 
 ####functions

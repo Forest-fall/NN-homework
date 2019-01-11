@@ -108,7 +108,7 @@ class Filter(object):
     
 class ConvLayer(object):
     def __init__(self, input_width, input_height, channel_number, filter_width, filter_height, 
-                filter_number, zero_padding, stride, learning_rate):
+                filter_number, zero_padding, stride):
         self.input_width = input_width
         self.input_height = input_height
         self.channel_number = channel_number
@@ -123,7 +123,7 @@ class ConvLayer(object):
         self.filters = []
         for i in range(filter_number):
             self.filters.append(Filter(self.channel_number, filter_height, filter_width))
-        self.learning_rate = learning_rate
+        self.learning_rate = 0.1
 
     def forward(self, input_array):
         '''计算卷积层的输出, 输出结果保存在self.output_array中'''

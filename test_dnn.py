@@ -34,8 +34,8 @@ for epoch in range(30):
     print("Epoch:{0}, loss:{1}, accuracy:{2:.2%}".format(epoch, loss, test_accuracy))
     Loss.append(loss)
     Accuracy.append(test_accuracy)
-    with open("./dnn_loss", "w") as f:
+    with open("./dnn_loss.2", "w") as f:
         json.dump(Loss, f)
-    with open("./dnn_accuracy", "w") as f:
+    with open("./dnn_accuracy.2", "w") as f:
         json.dump(Accuracy, f)
     

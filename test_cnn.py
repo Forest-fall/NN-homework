@@ -13,11 +13,11 @@ training_data = training_data[0:1]
 test_data = test_data[0:10]
 learning_rate = 0.001
 
-c1 = ConvNN.ConvLayer(28, 28, 1, 5, 5, 6, 2, 1, 0.001)
+c1 = ConvNN.ConvLayer(28, 28, 1, 5, 5, 6, 2, 1)
 p2 = ConvNN.MaxPoolingLayer(28, 28, 6, 2, 2, 2)
-c3 = ConvNN.ConvLayer(14, 14, 6, 5, 5, 16, 0, 1, 0.001)
+c3 = ConvNN.ConvLayer(14, 14, 6, 5, 5, 16, 0, 1)
 p4 = ConvNN.MaxPoolingLayer(10, 10, 16, 2, 2, 2)
-c5 = ConvNN.ConvLayer(5, 5, 16, 5, 5, 120, 0, 1, 0.001)
+c5 = ConvNN.ConvLayer(5, 5, 16, 5, 5, 120, 0, 1)
 fc = DeepNet.FCLayer([120, 84, 10])
 
 num = 0
