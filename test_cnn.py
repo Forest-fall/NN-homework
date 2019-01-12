@@ -9,9 +9,9 @@ import json
 
 
 training_data, validation_data, test_data = mnist_loader.load_data_for_cnn()
-training_data = training_data[0:1]
-test_data = test_data[0:10]
-learning_rate = 0.001
+training_data = training_data
+test_data = test_data
+learning_rate = 0.1
 
 c1 = ConvNN.ConvLayer(28, 28, 1, 5, 5, 6, 2, 1)
 p2 = ConvNN.MaxPoolingLayer(28, 28, 6, 2, 2, 2)
@@ -37,9 +37,10 @@ eta = 0.1
 
 #用于存放数据绘图
 Loss = []
+Accuracy = []
 
 #一次迭代 epoch = 1
-for epoch in range(100):
+for epoch in range(30):
    '''每一次迭代都打乱一次数据'''
    random.shuffle(training_data)
    mini_batches = [training_data[k: k + mini_batch_size] for k in range(0, n_train, mini_batch_size)]
@@ -129,35 +130,34 @@ for epoch in range(100):
       c3_filters = c3.update(c3_sigma_nabla_w, c3_sigma_nabla_b, mini_batch_size)
       c1_filters = c1.update(c1_sigma_nabla_w, c1_sigma_nabla_b, mini_batch_size)
 
-      # loss = net.evaluate_loss()[0]
-      # test_accuracy = net.evaluate_accuracy(test_data)
-      right_number = 0
-      for x, y  in test_data:
-         #forward
-         c1.forward(x)
-         c1_output = c1.output_array
-         p2.forward(c1_output)
-         p2_output = p2.output_array
-         c3.forward(p2_output)
-         c3_output = c3.output_array
-         p4.forward(c3_output)
-         p4_output = p4.output_array
-         c5.forward(p4_output)
-         c5_output = c5.output_array
-         c5_output = fc_in(c5_output)
-         fc_output_z, fc_output_a = fc.feedforward(c5_output)
-         if np.argmax(fc_output_a) == y:
-            right_number += 1
-         loss = fc.evaluate_loss()[0]
-      # print("第{0}批,Accuracy:{1}".format(num, right_number))
-      print("Epoch:{0}, loss:{1}, accuracy:{2:.2%}".format(epoch, loss, right_number / len(test_data)))
-      Loss.append(loss)
-      with open("./cnn_loss", "w") as f:
-        json.dump(Loss, f)
+   losses = 0
+   accuracy_results =[]
+   for x, y  in test_data:
+      #forward
+      c1.forward(x)
+      c1_output = c1.output_array
+      p2.forward(c1_output)
+      p2_output = p2.output_array
+      c3.forward(p2_output)
+      c3_output = c3.output_array
+      p4.forward(c3_output)
+      p4_output = p4.output_array
+      c5.forward(p4_output)
+      c5_output = c5.output_array
+      c5_output = fc_in(c5_output)
+      fc_output_z, fc_output_a = fc.feedforward(c5_output)
+
+      loss = fc.cnn_cost(fc_output_a, y) 
+      losses += loss / len(test_data)
+      accuracy_results.append((np.argmax(fc_output_a), y))
+   test_accuracy = sum(int(x == y) for (x, y) in accuracy_results) / len(test_data)
+   print("Epoch:{0}, loss:{1}, accuracy:{2:.2%}".format(epoch, losses, test_accuracy))
+   # Loss.append(losses)
+   # Accuracy.append(test_accuracy)
+   # with open("./cnn_loss", "w") as f:
+   #    json.dump(Loss, f)
+
 #每一次迭代完成，计算一次正确率
-
-
-
       # fig = plt.figure()
       # plt.imshow(c1_delta_map[0])
       # plt.axis('off')

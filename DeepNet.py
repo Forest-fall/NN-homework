@@ -10,6 +10,7 @@ class Quadratic(object):
     @staticmethod
     def cost_result(a, y, z= None):
         """计算loss"""
+        y = 1.0
         return 0.5 * (a - y)**2
 
     @staticmethod
@@ -23,6 +24,7 @@ class LogLikehood(object):
     @staticmethod
     def cost_result(a, y, z= None):
         """分类正确的y=1,所以只需要传入y=1那个类的激活值;别的类y=0无需计算"""
+        y = 1.0
         return (- y * np.log(a))
 
     @staticmethod
@@ -43,7 +45,7 @@ class CrossEntropy(object):
 
 class FCLayer(object):
 
-    def __init__(self, sizes, cost= Quadratic):
+    def __init__(self, sizes, cost= LogLikehood):
         self.num_layers = len(sizes)
         self.sizes = sizes
         self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
@@ -69,13 +71,13 @@ class FCLayer(object):
         self.zs = [] 
         for w, b in zip(self.weights[:-1], self.biases[:-1]):
             z = np.dot(w, a) + b
-            # a = tanh(z)
-            a = sigmoid(z)
+            a = tanh(z)
+            # a = sigmoid(z)
             self.zs.append(z)
             self.activations.append(a)
         z = np.dot(self.weights[-1], a) + self.biases[-1]
-        # a = softmax(z)
-        a = sigmoid(z)
+        a = softmax(z)
+        # a = sigmoid(z)
         self.zs.append(z)
         self.activations.append(a)
         a = self.activations
@@ -85,17 +87,16 @@ class FCLayer(object):
         self.lable = y
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
-        #delta = self.cost_derivative(activations[-1], y) * sigmoid_derivative(zs[-1])
+        delta = (self.cost).output_delta(self.activations[-1], y, self.zs[-1]) 
 
-        delta = (self.cost).output_delta(self.activations[-1], y, self.zs[-1]) #activations[-1] - y
         self.delta[-1] = delta
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, self.activations[-2].transpose())
 
         for l in range(2, self.num_layers):
             z = self.zs[-l]
-            # activation_derivative = tanh_derivative(z)
-            activation_derivative = sigmoid_derivative(z)
+            activation_derivative = tanh_derivative(z)
+            # activation_derivative = sigmoid_derivative(z)
             delta = np.dot(self.weights[-l + 1].transpose(), delta) * activation_derivative #Hadamard乘积
             self.delta[-l] = delta
             nabla_w[-l] = np.dot(delta, self.activations[-l - 1].transpose()) 
@@ -110,18 +111,23 @@ class FCLayer(object):
         self.weights = [w - (self.eta  /mini_batch_size) * nw for w, nw in zip(self.weights, sigma_nabla_w)]
         self.biases = [b - (self.eta / mini_batch_size) * nb for b, nb in zip(self.biases, sigma_nabla_b)]
         return self.weights, self.biases
-
-    def evaluate_accuracy(self, data):
-        accuracy_results =[]
-        accuracy_results = [(np.argmax(self.feedforward(x)), y) for (x, y) in data]
-        return sum(int(x == y) for (x, y) in accuracy_results) / len(data)
     
-    def evaluate_loss(self, data= None, isTest= True):
-        #计算一个样本值的loss
-        category_right = np.argmax(self.lable)
-        activation_correlative = self.activations[-1][category_right]
-        log_loss = (self.cost).cost_result(activation_correlative, 1)
-        return log_loss
+    def evaluate(self, data):
+        '''返回损失值与正确率'''
+        loss = 0
+        accuracy_results =[]
+        for x,y in data:
+            z, a = self.feedforward(x)
+
+            cost = (self.cost).cost_result(a[y], y)
+            loss += cost / len(data)
+            accuracy_results.append((np.argmax(a), y))
+            
+        return loss[0], sum(int(x == y) for (x, y) in accuracy_results) / len(data)
+
+    def cnn_cost(self, a, y):
+        loss_value = (self.cost).cost_result(a[y], y)
+        return loss_value
 
 
 ####functions

@@ -7,6 +7,7 @@ import random
 training_data, validation_data, test_data = mnist_loader.load_data_for_dnn()
 net = DeepNet.FCLayer([784, 100, 100, 100, 10])
 
+# test_data = test_data[0:10]
 n_test = len(test_data)
 n_train = len(training_data)
 mini_batch_size = 10
@@ -29,13 +30,13 @@ for epoch in range(30):
             sigma_w = [sw + nw for sw, nw in zip(sigma_w, nabla_w)]
             sigma_b = [sb + nb for sb, nb in zip(sigma_b, nabla_b)]
         update_w, update_b = net.update(sigma_w, sigma_b, mini_batch_size)
-    loss = net.evaluate_loss()[0]
-    test_accuracy = net.evaluate_accuracy(test_data)
+        
+    loss, test_accuracy = net.evaluate(test_data)
     print("Epoch:{0}, loss:{1}, accuracy:{2:.2%}".format(epoch, loss, test_accuracy))
     Loss.append(loss)
     Accuracy.append(test_accuracy)
-    with open("./dnn_loss.2", "w") as f:
+    with open("./dnn_loss", "w") as f:
         json.dump(Loss, f)
-    with open("./dnn_accuracy.2", "w") as f:
+    with open("./dnn_accuracy", "w") as f:
         json.dump(Accuracy, f)
     
