@@ -9,8 +9,8 @@ import json
 
 
 training_data, validation_data, test_data = mnist_loader.load_data_for_cnn()
-training_data = training_data
-test_data = test_data
+training_data = training_data[0:1000]
+test_data = test_data[0:1000]
 learning_rate = 0.1
 
 c1 = ConvNN.ConvLayer(28, 28, 1, 5, 5, 6, 2, 1)
@@ -20,7 +20,7 @@ p4 = ConvNN.MaxPoolingLayer(10, 10, 16, 2, 2, 2)
 c5 = ConvNN.ConvLayer(5, 5, 16, 5, 5, 120, 0, 1)
 fc = DeepNet.FCLayer([120, 84, 10])
 
-num = 0
+
 
 def fc_in(array_in):
    '''c5卷积层的输出是(120,1,1),而全连接层的输入是(120,1),改一下shape'''
@@ -32,7 +32,7 @@ def fc_in(array_in):
 
 n_test = len(test_data)
 n_train = len(training_data)
-mini_batch_size = 10
+mini_batch_size = 1
 eta = 0.1
 
 #用于存放数据绘图
@@ -44,9 +44,9 @@ for epoch in range(30):
    '''每一次迭代都打乱一次数据'''
    random.shuffle(training_data)
    mini_batches = [training_data[k: k + mini_batch_size] for k in range(0, n_train, mini_batch_size)]
-
+   num = 0
    for mini_batch in mini_batches:
-
+      num += 1
       fc_sigma_nabla_w = [np.zeros(w.shape) for w in fc.get_weights()]
       fc_sigma_nabla_b = [np.zeros(b.shape) for b in fc.get_biases()]
 
@@ -59,9 +59,8 @@ for epoch in range(30):
       c1_sigma_nabla_w = [np.zeros(filter.get_weights().shape) for filter in c1.filters]
       c1_sigma_nabla_b = [0] * c1.filter_number
 
-      num += 1
       for x,y in mini_batch:
-
+         print(epoch, num)
          # output_z, output_a = net.feedforward(x)
          # nabla_w, nabla_b = net.backprop(y)
          # sigma_w = [sw + nw for sw, nw in zip(sigma_w, nabla_w)]
@@ -129,10 +128,12 @@ for epoch in range(30):
       c5_filters = c5.update(c5_sigma_nabla_w, c5_sigma_nabla_b, mini_batch_size)
       c3_filters = c3.update(c3_sigma_nabla_w, c3_sigma_nabla_b, mini_batch_size)
       c1_filters = c1.update(c1_sigma_nabla_w, c1_sigma_nabla_b, mini_batch_size)
-
    losses = 0
    accuracy_results =[]
+   t = 0
+   accuracy_number = 0
    for x, y  in test_data:
+      t += 1
       #forward
       c1.forward(x)
       c1_output = c1.output_array
@@ -147,15 +148,18 @@ for epoch in range(30):
       c5_output = fc_in(c5_output)
       fc_output_z, fc_output_a = fc.feedforward(c5_output)
 
-      loss = fc.cnn_cost(fc_output_a, y) 
+      loss = fc.cnn_cost(fc_output_a, y)[0]
       losses += loss / len(test_data)
-      accuracy_results.append((np.argmax(fc_output_a), y))
-   test_accuracy = sum(int(x == y) for (x, y) in accuracy_results) / len(test_data)
+      if (np.argmax(fc_output_a))== y:
+         accuracy_number += 1
+   test_accuracy = accuracy_number / len(test_data)
    print("Epoch:{0}, loss:{1}, accuracy:{2:.2%}".format(epoch, losses, test_accuracy))
-   # Loss.append(losses)
-   # Accuracy.append(test_accuracy)
-   # with open("./cnn_loss", "w") as f:
-   #    json.dump(Loss, f)
+   Loss.append(losses)
+   Accuracy.append(test_accuracy)
+   with open("./cnn_loss", "w") as f:
+      json.dump(Loss, f)
+   with open("./cnn_accuracy", "w") as f:
+      json.dump(Accuracy, f)
 
 #每一次迭代完成，计算一次正确率
       # fig = plt.figure()
